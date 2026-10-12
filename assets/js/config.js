@@ -1,7 +1,7 @@
 window.PORTAL_CONFIG=Object.freeze({
-  domain:'driver-fmcsa-dot.screenings4u.com',
-  portalCode:'driver_dot',
-  label:'DOT Driver Portal',
+  domain:'ctpa-driver-dot.screenings4u.com',
+  portalCode:'ctpa_driver_dot',
+  label:'C/TPA Sponsored DOT Driver Portal',
   kind:'self',
   surface:'dot',
   agency:null,
