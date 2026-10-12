@@ -1,6 +1,6 @@
 (()=>{'use strict';
 const C=window.PORTAL_CONFIG,
-  sb=window.supabase.createClient(C.workforceUrl,C.workforceKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}}),
+  sb=window.S4UGetSupabaseClient(),
   st=document.getElementById('status'),
   form=document.getElementById('loginForm'),
   submit=document.getElementById('loginSubmit'),
@@ -39,7 +39,7 @@ const waitForTurnstile=()=>{
 async function route(){
   const {data:{session}}=await sb.auth.getSession();
   if(!session)return false;
-  const r=await fetch(`${C.workforceUrl}/functions/v1/dot-session-context`,{
+  const r=await fetch(`${C.workforceUrl}/functions/v1/driver-dot-session`,{
     method:'POST',
     headers:{'Content-Type':'application/json','Authorization':`Bearer ${session.access_token}`,'apikey':C.workforceKey},
     body:JSON.stringify({requested_portal_code:C.portalCode})

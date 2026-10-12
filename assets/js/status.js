@@ -1,5 +1,5 @@
 (()=>{'use strict';
-const C=window.PORTAL_CONFIG,sb=window.supabase.createClient(C.workforceUrl,C.workforceKey,{auth:{persistSession:false}});
+const C=window.PORTAL_CONFIG,sb=window.S4UGetSupabaseClient();
 const $=s=>document.querySelector(s),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])),pretty=v=>String(v||'').replaceAll('_',' ').replace(/\b\w/g,x=>x.toUpperCase()),fmt=v=>{if(!v)return'—';const d=new Date(v);return Number.isNaN(d.getTime())?'—':new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'}).format(d)};
 const rank={operational:0,maintenance:1,degraded_performance:2,partial_outage:3,major_outage:4};
 function overall(components,incidents){const active=incidents.filter(i=>!['resolved','closed','completed'].includes(String(i.status||'').toLowerCase())&&String(i.status||'').toLowerCase()!=='scheduled');if(active.some(i=>String(i.impact).toLowerCase()==='critical'))return'major_outage';if(active.some(i=>String(i.impact).toLowerCase()==='major'))return'partial_outage';if(active.some(i=>String(i.impact).toLowerCase()==='minor'))return'degraded_performance';return components.reduce((w,c)=>(rank[c.status]||0)>(rank[w]||0)?c.status:w,'operational')}

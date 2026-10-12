@@ -1,6 +1,6 @@
 (()=>{'use strict';
 const C=window.PORTAL_CONFIG;
-const sb=window.supabase.createClient(C.workforceUrl,C.workforceKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+const sb=window.S4UGetSupabaseClient();
 const $=(s,r=document)=>r.querySelector(s);
 const $$=(s,r=document)=>[...r.querySelectorAll(s)];
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -11,6 +11,8 @@ const statusClass=v=>/active|complete|completed|paid|eligible|final|negative|ack
 const badge=v=>`<span class="badge ${statusClass(v)}">${esc(pretty(v))}</span>`;
 const page=()=>location.pathname.split('/').pop()?.replace('.html','')||'dashboard';
 const storageKey=()=>`s4u_${C.portalCode}_membership`;
+const subscriptionKey=()=>`s4u_${C.portalCode}_subscription`;
+const storedSubscription=()=>localStorage.getItem(subscriptionKey())||'';
 const stored=()=>localStorage.getItem(storageKey())||'';
 const saveMid=v=>{if(v)localStorage.setItem(storageKey(),v)};
 const brandCacheKey=id=>`s4u_${C.portalCode}_brand_${id||'default'}`;
@@ -34,8 +36,8 @@ function applyBranding(d,ctx){const b=d?.branding||null,name=brandName(d,ctx),ro
  const nt=$('.nav-title');if(nt)nt.textContent=name;const crumb=$('.crumb');if(crumb)crumb.textContent=`${name} / ${cfgPage(page()).label}`;const kicker=$('.hero-kicker');if(kicker)kicker.textContent=name;document.title=`${cfgPage(page()).label} | ${name}`;setBrandLogo(b?.logo_path||'/assets/img/logo.png',name);writeBrandCache(ctx?.membership?.id,b)}
 
 async function getSession(){if(activeSession&&(!activeSession.expires_at||activeSession.expires_at*1000-Date.now()>30000))return activeSession;const {data:{session},error}=await sb.auth.getSession();if(error)throw error;activeSession=session||null;return activeSession}
-async function invoke(name,body={}){const s=await getSession();if(!s)throw Object.assign(new Error('AUTH_REQUIRED'),{status:401});const r=await fetch(`${C.workforceUrl}/functions/v1/${name}`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${s.access_token}`,'apikey':C.workforceKey},body:JSON.stringify({portal_code:C.portalCode,membership_id:stored()||undefined,...body})});const d=await r.json().catch(()=>({}));if(!r.ok||d.error)throw Object.assign(new Error(d.error||`Request failed (${r.status}).`),{status:r.status,payload:d});return d}
-async function access(){const b={requested_portal_code:C.portalCode,requested_page:page()};if(stored())b.membership_id=stored();return invoke('dot-session-context',b)}
+async function invoke(name,body={}){const s=await getSession();if(!s)throw Object.assign(new Error('AUTH_REQUIRED'),{status:401});const payload=window.S4UWithPortal({membership_id:stored()||undefined,...body,legacy_endpoint:name});const r=await fetch(`${C.workforceUrl}/functions/v1/driver-dot-actions`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${s.access_token}`,'apikey':C.workforceKey},body:JSON.stringify(payload)});const d=await r.json().catch(()=>({}));const em=typeof d.error==='string'?d.error:(d.error?.message||d.message||d.details||d.hint||'');if(!r.ok||d.error)throw Object.assign(new Error(em||`Request failed (${r.status}).`),{status:r.status,payload:d});return d}
+async function access(){const s=await getSession();if(!s)throw Object.assign(new Error('AUTH_REQUIRED'),{status:401});const b={requested_portal_code:C.portalCode,requested_page:page(),portal_code:C.portalCode,page:page()};if(stored())b.membership_id=stored();if(typeof storedSubscription==='function'&&storedSubscription())b.subscription_id=storedSubscription();const r=await fetch(`${C.workforceUrl}/functions/v1/driver-dot-session`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${s.access_token}`,'apikey':C.workforceKey},body:JSON.stringify(window.S4UWithPortal(b))});const d=await r.json().catch(()=>({}));const em=typeof d.error==='string'?d.error:(d.error?.message||d.message||d.details||d.hint||'');if(!r.ok||d.error)throw Object.assign(new Error(em||`Request failed (${r.status}).`),{status:r.status,payload:d});return d}
 async function selfData(){return invoke('workforce-employee-portal',{action:'workspace'})}
 
 const cfgPage=id=>NAV.find(x=>norm(x.id)===norm(id))||C.pages.find(x=>norm(x.id)===norm(id))||{id,label:pretty(id),icon:'•',href:`/${id}.html`};
