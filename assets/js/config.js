@@ -75,7 +75,7 @@ window.PORTAL_CONFIG=Object.freeze({
       if(target===original)return baseFetch(input,init);
       parts[idx+1]=target;u.pathname=parts.join('/');
       const i=init?{...init}:{};
-      if(i.body&&typeof i.body==='string'){try{const b=JSON.parse(i.body);b.portal_code="driver_dot";b.requested_portal_code="driver_dot";if(routeToActions&&!b.legacy_endpoint)b.legacy_endpoint=original;i.body=JSON.stringify(b)}catch{}}
+      if(i.body&&typeof i.body==='string'){try{const b=JSON.parse(i.body);b.portal_code=C.portalCode;b.requested_portal_code=C.portalCode;if(routeToActions&&!b.legacy_endpoint)b.legacy_endpoint=original;i.body=JSON.stringify(b)}catch{}}
       return baseFetch(u.toString(),i);
     }catch(e){return baseFetch(input,init)}
   };
